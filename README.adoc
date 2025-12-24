@@ -1,0 +1,8 @@
+= POW: The Game
+:toc: auto
+
+A game exploring proof-of-work concepts.
+
+== License
+
+AGPL-3.0-or-later
