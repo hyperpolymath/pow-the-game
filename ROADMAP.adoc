@@ -1,0 +1,60 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2025 hyperpolymath
+
+= POW: The Game — Roadmap
+:toc: auto
+
+== Current Status
+
+[IMPORTANT]
+====
+*Project specification will be uploaded shortly.*
+
+This repository is currently in early infrastructure setup. No application code or game design documents exist yet.
+====
+
+== What Exists
+
+=== Infrastructure (Complete)
+* [x] Repository initialization
+* [x] Multi-forge mirroring (GitHub → GitLab, Codeberg, Bitbucket)
+* [x] Instant-sync workflow for private infrastructure
+* [x] Language policy established (Hyperpolymath Standard)
+* [x] License declared (AGPL-3.0-or-later)
+
+=== Development Standards (Established)
+* Primary language: *ReScript* (compiles to JS)
+* Systems/performance: *Rust*
+* Runtime: *Deno* (not Node.js)
+* Mobile: *Tauri 2.0+* or *Dioxus*
+* Backend services: *Gleam*
+* Package management: *Guix* (primary), *Nix* (fallback)
+
+== Planned Phases
+
+=== Phase 1: Project Foundation
+* [ ] Create project structure (src/, lib/, tests/)
+* [ ] Initialize package management (guix.scm, deno.json)
+* [ ] Set up development environment
+* [ ] Create STATE.scm, META.scm, ECOSYSTEM.scm
+
+=== Phase 2: Game Design
+* [ ] Upload game specification document
+* [ ] Define proof-of-work game mechanics
+* [ ] Design core gameplay loop
+* [ ] Establish asset requirements
+
+=== Phase 3: Implementation
+* [ ] Core game engine (ReScript/Rust)
+* [ ] Game logic and mechanics
+* [ ] User interface
+* [ ] Testing framework
+
+=== Phase 4: Distribution
+* [ ] Desktop builds
+* [ ] Mobile builds (Tauri 2.0+/Dioxus)
+* [ ] Web deployment
+
+== Contributing
+
+Contribution guidelines will be established once the project specification is uploaded.
