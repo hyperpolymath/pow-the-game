@@ -1,0 +1,73 @@
+image:https://img.shields.io/badge/License-PMPL--1.0-blue.svg[License: PMPL-1.0,link="https://github.com/hyperpolymath/palimpsest-license"]
+image:https://img.shields.io/badge/Philosophy-Palimpsest-indigo.svg[Palimpsest,link="https://github.com/hyperpolymath/palimpsest-license"]
+
+
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-FileCopyrightText: 2025 hyperpolymath
+
+= POW: The Game
+
+:toc: auto
+:toclevels: 3
+
+A game exploring proof-of-work concepts.
+
+[IMPORTANT]
+====
+*Project specification will be uploaded shortly.*
+
+This repository is in early infrastructure setup phase.
+====
+
+== Overview
+
+POW: The Game is a project exploring proof-of-work concepts through interactive gameplay. Details on game mechanics and design will be added once the project specification is finalized.
+
+== Status
+
+[cols="2,1,3"]
+|===
+| Component | Status | Notes
+
+| Repository Infrastructure
+| ✓ Complete
+| Multi-forge mirroring active
+
+| Development Standards
+| ✓ Complete
+| Hyperpolymath Standard established
+
+| Project Specification
+| ⏳ Pending
+| Will be uploaded shortly
+
+| Application Code
+| ⏳ Pending
+| Awaiting specification
+|===
+
+== Technology Stack
+
+Following the link:.claude/CLAUDE.md[Hyperpolymath Standard]:
+
+* *Primary Language*: ReScript
+* *Systems/Performance*: Rust
+* *Runtime*: Deno
+* *Mobile*: Tauri 2.0+ / Dioxus
+* *Package Management*: Guix (primary), Nix (fallback)
+
+== Roadmap
+
+See link:ROADMAP.adoc[ROADMAP.adoc] for development phases and milestones.
+
+== Repository Mirrors
+
+This repository is mirrored to:
+
+* GitLab
+* Codeberg
+* Bitbucket
+
+== License
+
+PMPL-1.0-or-later
