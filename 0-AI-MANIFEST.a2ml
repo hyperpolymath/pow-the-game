@@ -43,7 +43,7 @@ pow-the-game/
 ├── contractiles/        # Contractile framework files
 ├── hooks/               # Validation hook scripts
 ├── Justfile             # Build recipes
-├── LICENSE              # PMPL-1.0-or-later
+├── LICENSE              # AGPL-3.0
 └── README.adoc          # Project overview
 ```
 

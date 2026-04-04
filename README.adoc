@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: AGPL-3.0
 // SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 
 = POW: The Game
@@ -142,4 +142,4 @@ Following link:.claude/CLAUDE.md[Hyperpolymath Standard]:
 
 == License
 
-PMPL-1.0-or-later. Private repository — do not distribute.
+AGPL-3.0. Private repository — do not distribute.

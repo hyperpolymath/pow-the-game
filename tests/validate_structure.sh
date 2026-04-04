@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: AGPL-3.0
 # Structural smoke tests for pow-the-game.
 # Validates RSR scaffolding, hook scripts, and workflow presence.
 
