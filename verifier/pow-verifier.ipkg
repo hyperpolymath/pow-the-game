@@ -1,0 +1,14 @@
+-- SPDX-License-Identifier: AGPL-3.0
+-- SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+package pow-verifier
+
+authors = "Jonathan D.A. Jewell"
+version = "0.1.0"
+sourcedir = "src"
+executable = "pow-verifier-test"
+main = Main
+
+modules = Graph
+        , Verifier
+        , Main

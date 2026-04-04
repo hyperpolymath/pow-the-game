@@ -1,0 +1,331 @@
+// SPDX-License-Identifier: AGPL-3.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+= POW: The Game — Architecture Decision Record
+:toc: auto
+:toclevels: 3
+
+== Preamble
+
+This document records the key architectural and design decisions that must be
+resolved before Phase 1 implementation begins. Each decision follows a
+consistent format: question, options considered, evidence needed, and a
+provisional answer with rationale.
+
+These decisions are _provisional_ — they are the best answers we can give based
+on Phase 0 research. They become binding once Phase 1 code commits against them.
+
+== D1: Which platform for Phase 1 PoC?
+
+=== Question
+
+Which game platform should carry the first proof-of-concept worker?
+
+=== Options
+
+[cols="2,3,3,2"]
+|===
+| Option | Strengths | Weaknesses | TOS Risk
+
+| *Garry's Mod (GLua)*
+| Arbitrary Lua execution; `http.Fetch` for coordinator polling; Workshop mod
+delivery; large modding community
+| Client-side Lua is sandboxed (no filesystem, no sockets beyond http);
+Facepunch may rate-limit compute-heavy mods; game population declining
+| Medium — Workshop TOS prohibits "malware" but compute mods are grey area
+
+| *Factorio (circuit network)*
+| Turing-complete in-game; no external network needed within a save;
+deterministic simulation
+| ~60 UPS clock speed makes real computation impractically slow; encoding a
+SAT fragment as a circuit is a research project in itself
+| Low — mods are expected to do complex things
+
+| *Steamworks SDK direct (steamworks-rs)*
+| Full API access; P2P networking; lobby coordination; Rust (our core stack);
+no game dependency
+| Requires a Steam App ID ($100, weeks); application must "be a game" per TOS;
+no Workshop-based distribution to existing players
+| High — non-game app violates Steamworks Developer Agreement Sect. 1
+
+| *Roblox (Luau)*
+| 100M MAU; DataStore as shared state; mobile-inclusive
+| Heavily sandboxed; no raw HTTP from client; 10-second script timeout;
+Roblox TOS explicitly prohibits non-game computation
+| Very High — explicit TOS violation
+|===
+
+=== Evidence needed
+
+* Confirm `http.Fetch` in GLua can poll an external HTTPS endpoint at 1 req/sec
+  without server-side rate limiting.
+* Confirm GLua Workshop mod can receive a dynamic JSON payload from an external
+  server.
+* Measure Lua execution time available per frame tick in a GMod server context.
+
+=== Provisional answer: Garry's Mod (GLua)
+
+*Rationale*: GMod provides the best balance of capability and accessibility for
+a PoC. The worker is a standard Workshop mod that polls a coordinator via
+`http.Fetch`, receives a JSON work unit, performs a bounded computation in Lua,
+and posts the result back. No App ID needed. Factorio is too slow for
+meaningful computation. Steamworks direct requires an App ID we do not yet
+have. Roblox TOS explicitly prohibits this use.
+
+GMod also provides the most natural demonstration path: a player joins a server
+running our mod, and their client transparently contributes compute cycles to a
+3-colouring search while they play.
+
+== D2: Which problem class for Phase 1?
+
+=== Question
+
+What computational problem should the first PoC distribute?
+
+=== Options
+
+[cols="2,4,2"]
+|===
+| Option | Characteristics | Fragment independence
+
+| *Random graph 3-colouring*
+| Given G(n,p), determine if a valid 3-colouring exists. Search space
+partitions naturally by fixing colours of k seed vertices. Verification is O(m)
+edge checks. Well-studied phase transition at p = n^(-2/3).
+| Excellent — each fragment is an independent subspace search
+
+| *Random 3-SAT near phase transition*
+| Given n variables, m = 4.267n clauses (critical ratio). Fragment = prefix
+assignment of k variables. Verification is O(m) clause evaluation.
+| Excellent — variable space partitions cleanly via prefix fixing
+
+| *Monte Carlo estimation (pi, integral)*
+| Each worker generates N independent random samples. Aggregation is averaging.
+Verification is statistical (distribution test on submitted samples).
+| Perfect — fully independent, embarrassingly parallel
+
+| *Hamiltonian path search*
+| Partition starting vertices across workers. NP-complete; verification is O(n).
+| Good but search trees are very unbalanced
+|===
+
+=== Provisional answer: Random graph 3-colouring (primary), Monte Carlo (secondary)
+
+*Rationale*: 3-colouring is the flagship problem because:
+
+. It is NP-complete — demonstrating that game infrastructure can tackle hard
+  problems, not just embarrassingly parallel ones.
+. Fragments are naturally independent (fix k seed vertices, search the rest).
+. Verification is trivially O(m) — check every edge has different-colour
+  endpoints.
+. The phase transition at p ≈ n^(-2/3) provides a difficulty knob.
+
+Monte Carlo serves as the "hello world" — a simpler problem to validate the
+coordinator/worker protocol before attempting 3-colouring.
+
+*Phase 1 parameters*:
+
+* Primary: G(n=200, p=0.03) random graph, 3-colouring search
+* Fragment: fix 8 seed vertices (3^8 = 6561 fragments total)
+* Fragment timeout: 2 seconds per work unit
+* Secondary: Monte Carlo pi estimation, 10000 samples per fragment
+
+== D3: Verifier design — what does the Idris2 proof actually prove?
+
+=== Question
+
+The Idris2 verifier is the core safety guarantee. What property does it
+formally prove, and what does it _not_ prove?
+
+=== Design
+
+The verifier does NOT re-run the worker's computation. It checks the _result_.
+
+For 3-colouring, the verifier proves:
+
+[source,idris]
+----
+-- The core theorem: if verify returns True, the colouring is valid.
+-- "Valid" means: for every edge (u,v) in graph G, colour(u) /= colour(v),
+-- and every vertex is assigned exactly one of three colours.
+
+verifyCorrect : (g : Graph n) -> (c : Colouring n) ->
+                verify g c = True ->
+                ValidColouring g c
+----
+
+This is a proof _about the verification algorithm_, not about the search. It
+guarantees: "if the verifier says a colouring is valid, it IS valid." It says
+nothing about whether a colouring exists — only that accepted results are
+correct.
+
+=== What the proof covers
+
+* *Completeness of edge checking*: every edge in the adjacency list is inspected.
+* *Colour domain*: every vertex colour is in {0, 1, 2}.
+* *Totality*: the verification function terminates on all inputs.
+* *Soundness*: `verify g c = True` implies `ValidColouring g c`.
+
+=== What the proof does NOT cover
+
+* Whether a valid colouring exists for a given graph.
+* Whether the fragmenter correctly partitioned the search space.
+* Whether the coordinator faithfully relayed worker results.
+
+=== Implementation approach
+
+Phase 0 deliverable: an Idris2 module that defines `Graph`, `Colouring`,
+`ValidColouring`, and `verify`, with `verify` proven total and the soundness
+lemma type-checked. The proof uses a `believe_me` stub for Phase 0, replaced
+with a real proof in Phase 1.
+
+NOTE: `believe_me` is explicitly allowed here as a Phase 0 scaffolding tool.
+It must be replaced before Phase 1 ships. See D6 for the fraud resistance
+rationale — the proof's value is the type signature, not just the stub.
+
+== D4: Coordinator architecture — HTTP polling vs Steam P2P?
+
+=== Question
+
+How do workers receive work units and submit results?
+
+=== Options
+
+[cols="2,4,2"]
+|===
+| Option | Mechanism | TOS concern
+
+| *HTTP polling*
+| Worker mod calls `http.Fetch` to poll coordinator at
+`+https://coordinator.example.com/work+`. Coordinator is a Gleam/BEAM service.
+Standard HTTPS. Mod only needs outbound HTTP, which GMod permits.
+| None — external HTTP is standard for mods (Discord webhooks, server stats)
+
+| *Steam P2P (Networking Sockets API)*
+| Use Steam Datagram Relay for NAT-punched P2P between coordinator and workers.
+Requires both sides to run Steam client.
+| Medium — requires App ID; coordinator must authenticate as a Steam user
+
+| *Hybrid: HTTP for work dispatch, Steam lobby for discovery*
+| Workers discover coordinator via a Steam lobby listing, then communicate over
+HTTPS.
+| Low — lobby is just a rendezvous point; actual data flows over HTTPS
+|===
+
+=== Provisional answer: HTTP polling (Phase 1), lobby discovery as Phase 2 stretch
+
+*Rationale*: HTTP polling is the simplest architecture that works. The GLua
+`http.Fetch` and `http.Post` APIs are well-documented. The coordinator is a
+standard web service (Gleam on BEAM). No Steam App ID needed for the
+coordinator side. This decouples the coordinator from Steam entirely, making it
+testable and deployable independently.
+
+*Protocol sketch*:
+
+----
+Worker                         Coordinator (Gleam/BEAM)
+  |                                   |
+  |-- GET /work ------------------>   |  (poll for work unit)
+  |<-- 200 {fragment_id, data} ----   |  (JSON work unit)
+  |                                   |
+  |   [compute locally in Lua]        |
+  |                                   |
+  |-- POST /result --------------->   |  (submit result)
+  |   {fragment_id, colouring, ms}    |
+  |<-- 200 {accepted: true} -------   |
+----
+
+*Polling interval*: 5 seconds (configurable). Worker backs off if no work
+available (exponential backoff to 60s max).
+
+== D5: Fragment schema — what does a work unit look like?
+
+=== Question
+
+What is the data structure of a work unit (fragment) passed from coordinator
+to worker?
+
+=== Design
+
+A fragment is a JSON object validated by a Nickel contract. The Nickel contract
+is the single source of truth; the Rust fragmenter serialises to this schema,
+the Gleam coordinator validates against it, and the Lua worker deserialises it.
+
+=== Schema
+
+[source,nickel]
+----
+# Fragment schema for POW work units
+# See contractiles/k9/fragment.k9.ncl for the authoritative definition
+{
+  Fragment = {
+    # Unique identifier for this fragment (UUIDv7)
+    id | String | std.string.NonEmpty,
+
+    # Problem class
+    kind | [| 'ThreeColouring, 'MonteCarloPi |],
+
+    # Schema version for forward compatibility
+    schema_version | String | default = "1",
+
+    # Problem-specific payload
+    payload | { .. },
+
+    # Maximum compute time in ms before worker should abandon
+    timeout_ms | Number | default = 2000,
+
+    # How many independent verifications are required
+    quorum | Number | default = 3,
+
+    # Coordinator callback URL (must be HTTPS)
+    callback_url | String,
+  }
+}
+----
+
+See `tests/schema/fragment_contract_test.ncl` for the full contract with
+validation predicates.
+
+== D6: Fraud resistance — quorum threshold and independent verification
+
+=== Question
+
+How do we handle workers submitting incorrect or fraudulent results?
+
+=== Strategy: Quorum + Formal Verification
+
+Two layers of defence:
+
+==== Layer 1: Quorum
+
+Each fragment is dispatched to Q independent workers (default Q=3). The
+coordinator accepts a result only when ⌈Q/2⌉+1 workers return the same answer.
+For Q=3, this means 2-of-3 agreement.
+
+* Workers are assigned randomly from the available pool.
+* The coordinator does not reveal other workers' results until quorum is reached.
+* If no quorum is reached after 2*Q dispatches, the fragment is flagged for
+  manual inspection or re-fragmented.
+
+==== Layer 2: Formal verification (Idris2 verifier)
+
+Every result accepted by quorum is passed through the Idris2 verifier. The
+verifier is the final arbiter. If the verifier rejects a quorum-accepted
+result, all workers who submitted it are flagged as suspect.
+
+For 3-colouring, verification is O(m) — trivially fast. The verifier is the
+bottleneck only if m is very large, which it will not be in Phase 1
+(m ≈ 600 for G(200, 0.03)).
+
+==== Fraud cost analysis
+
+An adversary controlling fewer than ⌈Q/2⌉+1 workers assigned to the same
+fragment cannot corrupt the result. With Q=3 and random assignment from a pool
+of P=100 workers, where k=5 are adversarial: P(fraud) ≈ 0.3%. Any such result
+would still be caught by the Idris2 verifier.
+
+=== Open question for Phase 2
+
+Should workers submit a lightweight proof-of-work (e.g., hash of intermediate
+computation states) to prove they actually ran the computation? Deferred to
+Phase 2.

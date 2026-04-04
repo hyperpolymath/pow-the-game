@@ -17,6 +17,11 @@ Thumbs.db
 /dist/
 /out/
 
+# Gleam build artefacts
+coordinator/build/
+# Idris2 build artefacts
+verifier/build/
+
 # Dependencies
 /node_modules/
 /vendor/

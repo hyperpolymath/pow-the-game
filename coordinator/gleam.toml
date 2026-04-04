@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: AGPL-3.0
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+name = "pow_coordinator"
+version = "0.1.0"
+description = "Fault-tolerant fragment coordinator for POW distributed compute"
+licences = ["AGPL-3.0"]
+
+[dependencies]
+gleam_stdlib = ">= 0.44.0 and < 2.0.0"
+
+[dev-dependencies]
+gleeunit = ">= 1.0.0 and < 2.0.0"
