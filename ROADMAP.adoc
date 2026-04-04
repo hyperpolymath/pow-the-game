@@ -1,60 +1,60 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
-// SPDX-FileCopyrightText: 2025 hyperpolymath
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 
 = POW: The Game — Roadmap
 :toc: auto
 
-== Current Status
+== Phase 0: Research & Platform Survey ← _current_
 
-[IMPORTANT]
-====
-*Project specification will be uploaded shortly.*
+Goal: understand what is actually possible on each platform before
+committing to any architecture.
 
-This repository is currently in early infrastructure setup. No application code or game design documents exist yet.
-====
+* [ ] Steamworks SDK capability survey via `steamworks-rs`
+** Workshop item read/write from Rust
+** P2P networking primitives (Steam Datagram Relay)
+** Lobby/matchmaking as coordination bus
+* [ ] Garry's Mod GLua sandbox analysis
+** What compute is safe to run client-side?
+** Can Workshop mods receive dynamic payloads?
+** Latency/throughput of Lua ↔ game ↔ server round trip
+* [ ] Factorio circuit network feasibility
+** Model a SAT fragment as a circuit; measure clock speed
+** Benchmark: gates per second on typical hardware
+* [ ] Roblox Luau sandboxing limits
+** DataStore API as shared state?
+** Script execution time limits
 
-== What Exists
+== Phase 1: Minimal Proof of Concept
 
-=== Infrastructure (Complete)
-* [x] Repository initialization
-* [x] Multi-forge mirroring (GitHub → GitLab, Codeberg, Bitbucket)
-* [x] Instant-sync workflow for private infrastructure
-* [x] Language policy established (Hyperpolymath Standard)
-* [x] License declared (PMPL-1.0-or-later)
+Goal: prove one problem class distributable across one platform.
 
-=== Development Standards (Established)
-* Primary language: *ReScript* (compiles to JS)
-* Systems/performance: *Rust*
-* Runtime: *Deno* (not Node.js)
-* Mobile: *Tauri 2.0+* or *Dioxus*
-* Backend services: *Gleam*
-* Package management: *Guix* (primary), *Nix* (fallback)
+* [ ] Choose problem class (candidate: random graph 3-colouring search)
+* [ ] Write fragmenter in Rust
+* [ ] Write minimal Garry's Mod worker (GLua)
+* [ ] Write verifier in Idris2 (formally proven correct)
+* [ ] Integrate via steamworks-rs lobby
+* [ ] Measure: throughput, latency, correctness rate
 
-== Planned Phases
+== Phase 2: Aggregation Layer
 
-=== Phase 1: Project Foundation
-* [ ] Create project structure (src/, lib/, tests/)
-* [ ] Initialize package management (guix.scm, deno.json)
-* [ ] Set up development environment
-* [ ] Create STATE.scm, META.scm, ECOSYSTEM.scm
+* [ ] Gleam-based fault-tolerant aggregator (BEAM supervisor tree)
+* [ ] Result deduplication + quorum verification
+* [ ] Reconnect/rejoin handling (players leave mid-computation)
+* [ ] Persistence layer (VeriSimDB instance)
 
-=== Phase 2: Game Design
-* [ ] Upload game specification document
-* [ ] Define proof-of-work game mechanics
-* [ ] Design core gameplay loop
-* [ ] Establish asset requirements
+== Phase 3: Second Platform
 
-=== Phase 3: Implementation
-* [ ] Core game engine (ReScript/Rust)
-* [ ] Game logic and mechanics
-* [ ] User interface
-* [ ] Testing framework
+* [ ] Port worker to Factorio or Roblox
+* [ ] Measure cross-platform result consistency
 
-=== Phase 4: Distribution
-* [ ] Desktop builds
-* [ ] Mobile builds (Tauri 2.0+/Dioxus)
-* [ ] Web deployment
+== Phase 4: Incentive Model Research
 
-== Contributing
+* [ ] Survey opt-in mechanisms (not silent background compute)
+* [ ] In-game reward designs (leaderboard, cosmetics, acknowledgement)
+* [ ] Ethics review: player consent, compute cost, disclosure
 
-Contribution guidelines will be established once the project specification is uploaded.
+== Phase 5: Publication / Open Design
+
+* [ ] Write up findings as design document / informal paper
+* [ ] Decide what to open-source (verifier? fragmenter? platform bridges?)
+* [ ] Keep worker implementations private if platform TOS requires it

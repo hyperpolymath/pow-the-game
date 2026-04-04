@@ -1,27 +1,111 @@
-image:https://img.shields.io/badge/License-PMPL--1.0-blue.svg[License: PMPL-1.0,link="https://github.com/hyperpolymath/palimpsest-license"]
-image:https://img.shields.io/badge/Philosophy-Palimpsest-indigo.svg[Palimpsest,link="https://github.com/hyperpolymath/palimpsest-license"]
-
-
 // SPDX-License-Identifier: PMPL-1.0-or-later
-// SPDX-FileCopyrightText: 2025 hyperpolymath
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 
 = POW: The Game
+
+image:https://img.shields.io/badge/License-PMPL--1.0-blue.svg[License: PMPL-1.0,link="https://github.com/hyperpolymath/palimpsest-license"]
+image:https://img.shields.io/badge/visibility-private-red.svg[Private]
 
 :toc: auto
 :toclevels: 3
 
-A game exploring proof-of-work concepts.
+*Private research project.* Exploring Steam Workshop, Steamworks API, and
+other gaming-platform networks as substrates for distributed proof-of-work
+computation and combinatorial problem solving.
 
-[IMPORTANT]
-====
-*Project specification will be uploaded shortly.*
+== Core Idea
 
-This repository is in early infrastructure setup phase.
-====
+Steam has tens of millions of concurrent players and a Workshop modding
+ecosystem. Games expose scripting APIs (Lua, C#, custom DSLs). The hypothesis:
 
-== Overview
+> Can we use game mods and platform APIs to distribute computational
+> workloads — proofing, search, optimisation — across the players/machines
+> already running these games, without those machines being explicitly
+> enrolled as compute nodes?
 
-POW: The Game is a project exploring proof-of-work concepts through interactive gameplay. Details on game mechanics and design will be added once the project specification is finalized.
+This is not crypto mining. It is research into whether gaming infrastructure
+can be repurposed as ambient distributed computation — similar in spirit to
+BOINC/SETI@Home but embedded in games people are already playing.
+
+== Research Questions
+
+. *Distribution*: Can Steam Workshop mods carry workload fragments? Can
+  multiplayer game state act as a shared message bus?
+. *Incentive alignment*: How do you reward players/modders for compute
+  contributed? In-game currency? Leaderboard credit? Opt-in only.
+. *Problem classes*: Which problems are tractable this way? SAT/SMT fragments?
+  Graph search? Cellular automata? Monte Carlo simulations?
+. *Platform viability*: Steam first. What about Minecraft Fabric/Forge,
+  Roblox, Garry's Mod, Factorio's circuit network?
+. *Proofing*: Can results be independently verified without trusting any
+  single node? What formal verification techniques apply?
+
+== Candidate Platforms
+
+[cols="2,1,3"]
+|===
+| Platform | API / Mod system | Notes
+
+| *Steam Workshop*
+| Steamworks SDK (C++/Rust via steamworks-rs)
+| Largest distribution surface; Workshop for code delivery
+
+| *Garry's Mod*
+| GLua (Lua 5.1)
+| Extremely flexible; Workshop-delivered mods run client-side Lua
+
+| *Factorio*
+| Lua mod API + circuit network
+| Turing-complete in-game; real compute potential in circuit networks
+
+| *Minecraft (Fabric)*
+| Java mod API / Kotlin
+| Huge install base; note: Java/Kotlin banned — investigate JNI bridge to Rust
+
+| *Roblox*
+| Luau (typed Lua)
+| 100M+ MAU; sandboxed but scriptable
+
+| *Custom via Steamworks*
+| steamworks-rs (Rust)
+| Direct SDK access without any specific game dependency
+|===
+
+== Architecture Sketch
+
+----
+[Problem source] → fragment → [Steam Workshop / mod delivery]
+                                          ↓
+                              [Game client running mod]
+                                 (player machine)
+                                          ↓
+                              [Compute fragment result]
+                                          ↓
+                          [Verification / proof check]
+                                          ↓
+                              [Aggregation layer]
+                                          ↓
+                              [Solution reconstructed]
+----
+
+Key components to design:
+
+* *Fragmenter*: decompose a problem into independently solvable units
+* *Carrier*: deliver fragments via Workshop/mod API
+* *Worker*: lightweight compute kernel embedded in mod
+* *Verifier*: independently check results without re-running full work
+* *Aggregator*: reconstruct solution from verified fragments
+
+== Technology Stack
+
+Following link:.claude/CLAUDE.md[Hyperpolymath Standard]:
+
+* *Steamworks bridge*: `steamworks-rs` crate (Rust)
+* *Mod workers*: Lua (Garry's Mod/Factorio), Luau (Roblox)
+* *Core logic*: Rust
+* *Orchestration*: Gleam (BEAM — fault-tolerant aggregation)
+* *Formal verification*: Idris2 (problem decomposition proofs)
+* *Configuration*: Nickel
 
 == Status
 
@@ -29,45 +113,33 @@ POW: The Game is a project exploring proof-of-work concepts through interactive 
 |===
 | Component | Status | Notes
 
-| Repository Infrastructure
+| Infrastructure
 | ✓ Complete
-| Multi-forge mirroring active
+| Multi-forge mirroring, CI, RSR compliance
 
-| Development Standards
-| ✓ Complete
-| Hyperpolymath Standard established
+| Research direction
+| ✓ Defined
+| See this README and link:docs/VISION.adoc[docs/VISION.adoc]
 
-| Project Specification
+| Platform survey
+| ⏳ In progress
+| Evaluating Steamworks SDK + Garry's Mod first
+
+| Architecture
+| ⏳ Sketched
+| Fragmenter/Carrier/Worker/Verifier/Aggregator model
+
+| Implementation
 | ⏳ Pending
-| Will be uploaded shortly
-
-| Application Code
-| ⏳ Pending
-| Awaiting specification
+| Awaiting platform survey completion
 |===
 
-== Technology Stack
+== See Also
 
-Following the link:.claude/CLAUDE.md[Hyperpolymath Standard]:
-
-* *Primary Language*: ReScript
-* *Systems/Performance*: Rust
-* *Runtime*: Deno
-* *Mobile*: Tauri 2.0+ / Dioxus
-* *Package Management*: Guix (primary), Nix (fallback)
-
-== Roadmap
-
-See link:ROADMAP.adoc[ROADMAP.adoc] for development phases and milestones.
-
-== Repository Mirrors
-
-This repository is mirrored to:
-
-* GitLab
-* Codeberg
-* Bitbucket
+* link:docs/VISION.adoc[docs/VISION.adoc] — extended design thinking
+* link:ROADMAP.adoc[ROADMAP.adoc] — phased development plan
+* link:TEST-NEEDS.md[TEST-NEEDS.md] — CRG grade and test coverage
 
 == License
 
-PMPL-1.0-or-later
+PMPL-1.0-or-later. Private repository — do not distribute.

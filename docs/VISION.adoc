@@ -1,0 +1,153 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+= POW: The Game — Vision Document
+:toc: auto
+
+== The Observation
+
+Steam peaks at ~35 million concurrent users. Each machine is running a game
+loop at 60+ fps, with a GPU and CPU largely idle outside of rendering.
+Workshop mods are downloaded and executed on those machines already.
+
+BOINC/Folding@Home proved voluntary distributed compute works. The difference
+here: the compute is *embedded in something people are already doing* rather
+than being a separate opt-in application.
+
+== What "Proof of Work" Means Here
+
+Not cryptocurrency. The name is intentional misdirection / reclamation.
+
+"Proof of Work" means:
+
+. A *problem* is decomposed into independently verifiable fragments
+. *Workers* (game clients running mods) solve fragments
+. *Verifiers* confirm results without re-doing the work
+. *Aggregators* reconstruct the full solution from verified fragments
+
+The "proof" is cryptographic/formal: a worker cannot fake a result without
+doing the actual computation (or finding a collision, which is hard by design).
+
+== Why Games Specifically
+
+Games are interesting because:
+
+* *Existing distribution*: Workshop is already a trusted code delivery channel.
+  Players already execute Workshop code. No new install.
+* *Social coordination*: Multiplayer lobbies are natural coordination buses.
+  Players already trust a session host to some degree.
+* *Diverse hardware*: The gaming population has enormous GPU/CPU diversity.
+  Good for Monte Carlo and search problems that benefit from parallelism.
+* *Latency tolerance*: Unlike financial HPC, the problems we care about
+  (SAT search, graph colouring, combinatorial optimisation) tolerate
+  high-latency, lossy worker participation.
+
+== Problem Classes
+
+=== Good fits
+
+* *Search problems*: Random 3-SAT, graph colouring, Hamiltonian path.
+  Fragments are independent subspaces to search.
+* *Monte Carlo simulation*: Each worker runs N independent trials.
+  Results aggregate by averaging.
+* *Cellular automata / agent-based models*: Spatial decomposition.
+  Each worker owns a tile; edge states communicated via game state.
+* *Proof checking*: Distribute verification of formal proof steps.
+  Each worker checks one lemma; verifier checks the checker.
+
+=== Poor fits
+
+* *Iterative algorithms*: Anything with tight dependencies between steps
+  (gradient descent, dynamic programming over shared state).
+* *Real-time requirements*: Workers are players — they disconnect, go AFK,
+  have variable hardware.
+* *Secret inputs*: Can't send sensitive data through Workshop.
+
+== Platform Analysis
+
+=== Garry's Mod (GLua)
+
+Strong candidate for Phase 1 PoC.
+
+* Workshop mods execute arbitrary Lua in a sandboxed but capable environment
+* Server-side Lua can perform significant computation
+* `http.Fetch` allows polling a coordinator for work items
+* Multiplayer session = natural coordinator/worker topology
+* *Risk*: Facepunch may restrict compute-heavy mods via rate limiting
+
+=== Factorio
+
+Unique case: the in-game circuit network is Turing-complete.
+
+* A sufficiently large Factorio factory can simulate logic gates
+* Real circuits have been built: CPUs, hash functions, signal processors
+* *Hypothesis*: encode a SAT fragment as a combinatorial circuit;
+  let the game simulate it; read output from output signals
+* *Limitation*: clock speed is ~60 UPS (updates/second); very slow
+  but potentially parallelisable across many player instances
+* *Advantage*: completely self-contained, no network coordinator needed
+  within a single save; saves are shareable
+
+=== Steamworks SDK Direct (steamworks-rs)
+
+Not tied to a specific game. Use the Steamworks P2P networking and lobby
+system as a coordination layer for a custom lightweight application that
+*looks like* a game to Steam but is actually a distributed compute node.
+
+* Steam provides NAT traversal (Steam Datagram Relay) for free
+* Lobby API provides discovery and matchmaking
+* This is the most general approach but requires a Steam app ID
+* *Risk*: Steam TOS may prohibit non-game applications under a game app ID
+
+=== Roblox (Luau)
+
+100M+ MAU, younger demographic, very active modding.
+
+* DataStore API = persistent shared state across servers
+* `task.wait()` / scheduler = cooperative multitasking
+* *Limitation*: Roblox heavily sandboxes scripts; no raw network access
+* *Advantage*: massive install base, mobile-included
+
+== Architecture Decisions (Provisional)
+
+=== Decision 1: Coordinator outside the game
+
+The coordinator (fragmenter + aggregator) lives outside any game client —
+on a server we control. Workers poll the coordinator for tasks via HTTP
+or Steam P2P, submit results, and move on.
+
+*Rationale*: Keeping coordinator logic off the game client avoids TOS
+issues with "running a server inside a game" and allows upgrading the
+coordinator without Workshop updates.
+
+=== Decision 2: Verifier must be formally proven
+
+Using Idris2 to write the result verifier with a dependent-type proof
+that the verification algorithm is correct. This matters because:
+
+* We can't trust any individual worker
+* We don't want to re-run the full computation to verify
+* A formally proven verifier gives us confidence the aggregated result
+  is sound even if most workers are adversarial or buggy
+
+=== Decision 3: Rust core, Gleam aggregator
+
+* Fragmenter + verifier in Rust (performance, safety)
+* Aggregator in Gleam on the BEAM (fault tolerance — workers drop constantly)
+* steamworks-rs for platform integration
+
+=== Decision 4: Workers are opt-in, transparent
+
+Players who run the mod know they are contributing compute. The mod
+UI makes this visible. No silent background compute. This is an ethical
+and practical requirement (see Phase 4 in ROADMAP).
+
+== Open Questions
+
+. What is the minimum viable problem that demonstrates the concept?
+   (3-colouring a random graph with ~1000 nodes seems tractable)
+. How does the coordinator handle a worker submitting a fraudulent result?
+   (Quorum + independent verification; see verifier design)
+. Does Steam's TOS prohibit this? Need legal/community review.
+. What is the actual compute throughput achievable vs. BOINC?
+   (Hypothesis: lower, but zero marginal cost to the operator)
