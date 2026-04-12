@@ -1,0 +1,114 @@
+// SPDX-License-Identifier: AGPL-3.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= POW: The Game — EXPLAINME
+:toc: preamble
+:icons: font
+
+This file maps README.adoc claims to their implementation evidence for
+sceptical developers.
+
+== "Private research project: gaming infrastructure as distributed compute substrate"
+
+[quote, README.adoc]
+____
+Exploring Steam Workshop, Steamworks API, and other gaming-platform networks
+as substrates for distributed proof-of-work computation and combinatorial
+problem solving.
+____
+
+How this is implemented::
+POW is currently at the research and architecture-sketch stage. The README
+defines the five-component architecture (Fragmenter, Carrier, Worker, Verifier,
+Aggregator) and the candidate platform matrix (Steam, Garry's Mod, Factorio,
+Minecraft, Roblox). The link:docs/VISION.adoc[`docs/VISION.adoc`] contains
+extended design thinking. The status table in the README honestly reports:
+platform survey is in progress, implementation is pending.
+
+Caveat::
+No working Fragmenter, Carrier, Worker, Verifier, or Aggregator exists yet.
+The infrastructure (CI, RSR compliance, mirroring) is complete; the research
+implementation is not.
+
+== "Steam Workshop mods as workload delivery mechanism"
+
+[quote, README.adoc]
+____
+Distribution: Can Steam Workshop mods carry workload fragments? Can multiplayer
+game state act as a shared message bus?
+____
+
+How this is implemented::
+This is an open research question, not a working implementation. The README
+frames it as a hypothesis: "Can we use game mods and platform APIs to distribute
+computational workloads…?" The `steamworks-rs` Rust crate is the planned
+Steamworks SDK bridge (listed in the technology stack), but no integration code
+has been written yet.
+
+Caveat::
+Steam's Terms of Service prohibit certain automated and commercial uses of
+Workshop. The legal/ToS analysis is a prerequisite for implementation and is
+flagged as an open question in the architecture sketch.
+
+== "Formal verification for result correctness without trusting any single node"
+
+[quote, README.adoc]
+____
+Proofing: Can results be independently verified without trusting any single
+node? What formal verification techniques apply?
+____
+
+How this is implemented::
+The technology stack includes Idris2 for problem decomposition proofs. The
+Verifier component in the architecture sketch is designed to check results
+without re-running full work — using a proof witness approach. No Idris2 code
+has been written yet; this is the design intent.
+
+Caveat::
+The formal verification approach is planned but unimplemented. Which
+verification techniques are tractable for which problem classes (SAT fragments,
+graph search, Monte Carlo) is an open research question.
+
+== Dogfooded Across The Account
+
+[cols="1,2,2", options="header"]
+|===
+| Technology / Pattern | Used here | Also used in
+
+| Rust + steamworks-rs for game API
+| Planned Steamworks bridge
+| Unique to this repo in the estate
+
+| Gleam on BEAM for fault-tolerant aggregation
+| Planned Aggregator component
+| link:https://github.com/hyperpolymath/boj-server[boj-server]
+  (Gleam cartridge dispatch)
+
+| Idris2 for proof-of-correctness
+| Planned decomposition proofs
+| link:https://github.com/hyperpolymath/ephapax[ephapax],
+  link:https://github.com/hyperpolymath/boj-server[boj-server]
+
+| Nickel configuration
+| Planned Worker configuration
+| link:https://github.com/hyperpolymath/blue-screen-of-app[blue-screen-of-app],
+  link:https://github.com/hyperpolymath/standards[standards]
+
+| AGPL-3.0 licence
+| Private research project
+| link:https://github.com/hyperpolymath/idaptik[idaptik]
+  (co-developed projects exception)
+|===
+
+== Known Gaps
+
+This is explicitly a research project at the platform-survey stage. The gap
+between the architecture sketch and any running implementation is large and
+intentional — the README is honest about this.
+
+[CAUTION]
+====
+The README is marked AGPL-3.0 but the SPDX header says `AGPL-3.0` (not
+`AGPL-3.0-or-later`). The CLAUDE.md for this repo uses `AGPL-3.0`. This
+is not a co-developed project with son (unlike IDApTIK) — confirm the licence
+intent before publishing.
+====
