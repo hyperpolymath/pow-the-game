@@ -23,7 +23,7 @@ check() {
 [ -f "$REPO_ROOT/LICENSE" ]            && check "LICENSE present"              "ok" || check "LICENSE present"              "fail"
 [ -f "$REPO_ROOT/SECURITY.md" ]        && check "SECURITY.md present"         "ok" || check "SECURITY.md present"         "fail"
 [ -f "$REPO_ROOT/Justfile" ]           && check "Justfile present"             "ok" || check "Justfile present"             "fail"
-[ -f "$REPO_ROOT/0-AI-MANIFEST.a2ml" 2>/dev/null ] || [ -f "$REPO_ROOT/AI.a2ml" 2>/dev/null ] \
+[ -f "$REPO_ROOT/0-AI-MANIFEST.a2ml" ] || [ -f "$REPO_ROOT/AI.a2ml" ] \
     && check "AI manifest present" "ok" || check "AI manifest present" "fail"
 
 # --- Machine-readable metadata ---
