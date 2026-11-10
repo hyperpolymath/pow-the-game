@@ -1,6 +1,6 @@
 # Clone the repository
 
-git clone https://github.com/hyperpolymath/pow-the-game.git
+git clone https://github.com/catachresis-colloquium/pow-the-game.git
 cd pow-the-game
 
 # Using Guix (recommended for reproducibility)
@@ -90,10 +90,10 @@ pow-the-game/
 
     Look for issues labelled:
 
-    - [`good first issue`](https://github.com/hyperpolymath/pow-the-game/labels/good%20first%20issue) — Simple Perimeter 3 tasks
-    - [`help wanted`](https://github.com/hyperpolymath/pow-the-game/labels/help%20wanted) — Community help needed
-    - [`documentation`](https://github.com/hyperpolymath/pow-the-game/labels/documentation) — Docs improvements
-    - [`perimeter-3`](https://github.com/hyperpolymath/pow-the-game/labels/perimeter-3) — Community sandbox scope
+    - [`good first issue`](https://github.com/catachresis-colloquium/pow-the-game/labels/good%20first%20issue) — Simple Perimeter 3 tasks
+    - [`help wanted`](https://github.com/catachresis-colloquium/pow-the-game/labels/help%20wanted) — Community help needed
+    - [`documentation`](https://github.com/catachresis-colloquium/pow-the-game/labels/documentation) — Docs improvements
+    - [`perimeter-3`](https://github.com/catachresis-colloquium/pow-the-game/labels/perimeter-3) — Community sandbox scope
 
     ---
 
